@@ -43,14 +43,19 @@ class ChargeService : Service() {
 
     private var level = -1
     private var charging = false
-    private var wantOn = true
+    private var temperature = ChargePolicy.TEMPERATURE_UNKNOWN
+
+    /** The decision from the battery level only. The service keeps it across restarts. */
+    private var levelWantsOn = true
+    private var tooHot = false
+    private val wantOn: Boolean get() = ChargePolicy.chargerOn(levelWantsOn, tooHot)
     private var seq = 0
     private var error: String? = null
 
     override fun onCreate() {
         super.onCreate()
         settings = Settings(this)
-        wantOn = settings.wantOn
+        levelWantsOn = settings.wantOn
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "Status", NotificationManager.IMPORTANCE_LOW),
         )
@@ -115,13 +120,19 @@ class ChargeService : Service() {
             val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
             if (raw < 0 || scale <= 0) return
             val newLevel = raw * 100 / scale
-            val newCharging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
-            if (newLevel == level && newCharging == charging) return
+            val advertBefore = Triple(level, charging, wantOn)
+            val degreesBefore = temperature / 10
             level = newLevel
-            charging = newCharging
+            charging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+            temperature = intent.getIntExtra(
+                BatteryManager.EXTRA_TEMPERATURE,
+                ChargePolicy.TEMPERATURE_UNKNOWN,
+            )
             evaluate()
-            updateAdvert()
-            publish()
+            // The temperature changes frequently. Send a new advert only when its content changes.
+            val advertChanged = advertBefore != Triple(level, charging, wantOn)
+            if (advertChanged) updateAdvert()
+            if (advertChanged || degreesBefore != temperature / 10) publish()
         }
     }
 
@@ -141,11 +152,12 @@ class ChargeService : Service() {
     }
 
     private fun evaluate() {
-        val next = ChargePolicy.next(level, wantOn, settings.low, settings.high)
-        if (next != wantOn) {
-            wantOn = next
+        val next = ChargePolicy.next(level, levelWantsOn, settings.low, settings.high)
+        if (next != levelWantsOn) {
+            levelWantsOn = next
             settings.wantOn = next
         }
+        tooHot = ChargePolicy.nextTooHot(temperature, tooHot)
     }
 
     private fun advertiseData(): AdvertiseData {
@@ -265,6 +277,7 @@ class ChargeService : Service() {
             .putExtra(EXTRA_LEVEL, level)
             .putExtra(EXTRA_CHARGING, charging)
             .putExtra(EXTRA_WANT_ON, wantOn)
+            .putExtra(EXTRA_TOO_HOT, tooHot)
             .putExtra(EXTRA_BROADCASTING, advertisingSet != null)
         error?.let { status.putExtra(EXTRA_ERROR, it) }
         lastStatus = status
@@ -275,6 +288,7 @@ class ChargeService : Service() {
     private fun buildNotification(): Notification {
         val title = if (level < 0) "Charge Limiter" else "Battery $level %"
         val text = when {
+            advertisingSet != null && tooHot -> "Charger wanted OFF, battery is hot"
             advertisingSet != null -> "Charger wanted ${if (wantOn) "ON" else "OFF"}"
             else -> error ?: "Starting"
         }
@@ -299,6 +313,7 @@ class ChargeService : Service() {
         const val EXTRA_LEVEL = "level"
         const val EXTRA_CHARGING = "charging"
         const val EXTRA_WANT_ON = "wantOn"
+        const val EXTRA_TOO_HOT = "tooHot"
         const val EXTRA_BROADCASTING = "broadcasting"
         const val EXTRA_ERROR = "error"
 

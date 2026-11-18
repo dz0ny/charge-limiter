@@ -50,6 +50,42 @@ class ChargePolicyTest {
     }
 
     @Test
+    fun hotAtFortyDegrees() {
+        assertFalse(ChargePolicy.nextTooHot(399, previousTooHot = false))
+        assertTrue(ChargePolicy.nextTooHot(400, previousTooHot = false))
+    }
+
+    @Test
+    fun staysHotUntilBelowThirtySevenDegrees() {
+        assertTrue(ChargePolicy.nextTooHot(370, previousTooHot = true))
+        assertFalse(ChargePolicy.nextTooHot(369, previousTooHot = true))
+    }
+
+    @Test
+    fun temperatureJitterAtFortyGivesOneChange() {
+        var hot = false
+        var changes = 0
+        for (tenths in intArrayOf(398, 400, 396, 401, 395)) {
+            val next = ChargePolicy.nextTooHot(tenths, hot)
+            if (next != hot) changes++
+            hot = next
+        }
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun unknownTemperatureIsNotHot() {
+        assertFalse(ChargePolicy.nextTooHot(ChargePolicy.TEMPERATURE_UNKNOWN, previousTooHot = true))
+    }
+
+    @Test
+    fun heatStopsTheCharger() {
+        assertFalse(ChargePolicy.chargerOn(levelWantsOn = true, tooHot = true))
+        assertTrue(ChargePolicy.chargerOn(levelWantsOn = true, tooHot = false))
+        assertFalse(ChargePolicy.chargerOn(levelWantsOn = false, tooHot = false))
+    }
+
+    @Test
     fun phonePluggedInAtHalfChargesWithTheDefaults() {
         assertTrue(ChargePolicy.next(45, previousWantOn = false, ChargePolicy.DEFAULT_LOW, ChargePolicy.DEFAULT_HIGH))
     }

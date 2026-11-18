@@ -80,7 +80,9 @@ class MainActivity : Activity() {
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
         if (raw < 0 || scale <= 0) return
         val charging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
-        battery.text = "${raw * 100 / scale} %  ${if (charging) "charging" else "not charging"}"
+        val tenths = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, ChargePolicy.TEMPERATURE_UNKNOWN)
+        val degrees = if (tenths == ChargePolicy.TEMPERATURE_UNKNOWN) "" else "  ${tenths / 10} °C"
+        battery.text = "${raw * 100 / scale} %  ${if (charging) "charging" else "not charging"}$degrees"
     }
 
     private fun showStatus(status: Intent?) {
@@ -89,7 +91,11 @@ class MainActivity : Activity() {
             broadcasting.text = "no"
             return
         }
-        wanted.text = if (status.getBooleanExtra(ChargeService.EXTRA_WANT_ON, true)) "ON" else "OFF"
+        wanted.text = when {
+            status.getBooleanExtra(ChargeService.EXTRA_TOO_HOT, false) -> "OFF – battery is hot"
+            status.getBooleanExtra(ChargeService.EXTRA_WANT_ON, true) -> "ON"
+            else -> "OFF"
+        }
         val error = status.getStringExtra(ChargeService.EXTRA_ERROR)
         val on = status.getBooleanExtra(ChargeService.EXTRA_BROADCASTING, false)
         broadcasting.text = when {

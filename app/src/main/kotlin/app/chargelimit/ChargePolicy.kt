@@ -18,5 +18,28 @@ object ChargePolicy {
         else -> previousWantOn
     }
 
+    /** The charger stops at this battery temperature. The unit is 0.1 °C, as Android reports it. */
+    const val HOT_TENTHS = 400
+
+    /** The charger can start again below this battery temperature. */
+    const val COOL_TENTHS = 370
+
+    /** The value for a phone that does not report its battery temperature. */
+    const val TEMPERATURE_UNKNOWN = Int.MIN_VALUE
+
+    /**
+     * Returns true when the battery is too hot to charge.
+     * Two thresholds prevent fast changes. An unknown temperature is not hot.
+     */
+    fun nextTooHot(temperatureTenths: Int, previousTooHot: Boolean): Boolean = when {
+        temperatureTenths == TEMPERATURE_UNKNOWN -> false
+        temperatureTenths >= HOT_TENTHS -> true
+        temperatureTenths < COOL_TENTHS -> false
+        else -> previousTooHot
+    }
+
+    /** Heat stops the charger at any battery level. */
+    fun chargerOn(levelWantsOn: Boolean, tooHot: Boolean): Boolean = levelWantsOn && !tooHot
+
     fun validRange(low: Int, high: Int): Boolean = low in 0 until high && high <= 100
 }
