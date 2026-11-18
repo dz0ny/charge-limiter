@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="Charge Limiter"
+        android:textAppearance="@android:style/TextAppearance.Material.Headline" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2"
+        android:useDefaultMargins="true">
+
+        <TextView android:text="Battery" />
+        <TextView android:id="@+id/battery" android:text="–" />
+
+        <TextView android:text="Charger wanted" />
+        <TextView android:id="@+id/wanted" android:text="–" />
+
+        <TextView android:text="Broadcasting" />
+        <TextView
+            android:id="@+id/broadcasting"
+            android:layout_width="0dp"
+            android:layout_columnWeight="1"
+            android:text="no" />
+
+        <TextView android:labelFor="@+id/low" android:text="Charge below (%)" />
+        <EditText
+            android:id="@+id/low"
+            android:ems="4"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:maxLength="3" />
+
+        <TextView android:labelFor="@+id/high" android:text="Stop at (%)" />
+        <EditText
+            android:id="@+id/high"
+            android:ems="4"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:maxLength="3" />
+    </GridLayout>
+
+    <Button
+        android:id="@+id/toggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Start service" />
+</LinearLayout>
