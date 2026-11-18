@@ -47,6 +47,9 @@ public final class ChargeService extends Service {
     private Settings settings;
     private BluetoothLeAdvertiser advertiser;
     private AdvertisingSet advertisingSet;
+    /** Callback of the current start attempt; older callbacks are ignored. */
+    private AdvertisingSetCallback callback;
+    private boolean destroyed;
     private boolean starting;
     private boolean receiversRegistered;
 
@@ -106,7 +109,10 @@ public final class ChargeService extends Service {
             receiversRegistered = true;
         }
         // Thresholds may have changed; re-run the policy with the level we already have.
-        if (level >= 0) evaluate();
+        if (level >= 0) {
+            evaluate();
+            updateAdvert();
+        }
         startAdvertising();
         publish();
         return START_STICKY;
@@ -114,6 +120,7 @@ public final class ChargeService extends Service {
 
     @Override
     public void onDestroy() {
+        destroyed = true;
         if (receiversRegistered) {
             unregisterReceiver(batteryReceiver);
             unregisterReceiver(bluetoothReceiver);
@@ -156,8 +163,7 @@ public final class ChargeService extends Service {
             } else if (state == BluetoothAdapter.STATE_TURNING_OFF
                     || state == BluetoothAdapter.STATE_OFF) {
                 // The stack drops the advertising set when Bluetooth goes off.
-                advertisingSet = null;
-                starting = false;
+                stopAdvertising();
                 advertiser = null;
                 error = "Bluetooth is off";
             }
@@ -175,12 +181,12 @@ public final class ChargeService extends Service {
 
     private AdvertiseData advertiseData() {
         // Before the first battery reading, report 0 % and "charger on": the safe direction.
-        int shown = level < 0 ? 0 : level;
+        boolean known = level >= 0;
         return new AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
                 .addManufacturerData(AdvertPayload.COMPANY_ID,
-                        AdvertPayload.build(shown, wantOn, charging, seq))
+                        AdvertPayload.build(known ? level : 0, !known || wantOn, charging, seq))
                 .build();
     }
 
@@ -215,14 +221,17 @@ public final class ChargeService extends Service {
                 .setLegacyMode(true)
                 .setConnectable(false)
                 .setScannable(false)
-                .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
+                // INTERVAL_LOW is the short interval (about 100 ms), not a low rate.
+                .setInterval(AdvertisingSetParameters.INTERVAL_LOW)
                 .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
                 .build();
         try {
             starting = true;
             error = null;
+            // A fresh callback per attempt: the stack refuses one it still has registered.
+            callback = new SetCallback();
             advertiser.startAdvertisingSet(parameters, advertiseData(), null, null, null,
-                    advertisingCallback);
+                    callback);
         } catch (RuntimeException e) {
             starting = false;
             error = "Could not start broadcasting: " + e.getMessage();
@@ -245,20 +254,22 @@ public final class ChargeService extends Service {
 
     @SuppressLint("MissingPermission")
     private void stopAdvertising() {
-        if (advertiser != null) {
+        if (advertiser != null && callback != null) {
             try {
-                advertiser.stopAdvertisingSet(advertisingCallback);
+                advertiser.stopAdvertisingSet(callback);
             } catch (RuntimeException e) {
                 Log.w(TAG, "stopAdvertisingSet failed", e);
             }
         }
+        callback = null;
         advertisingSet = null;
         starting = false;
     }
 
-    private final AdvertisingSetCallback advertisingCallback = new AdvertisingSetCallback() {
+    private final class SetCallback extends AdvertisingSetCallback {
         @Override
         public void onAdvertisingSetStarted(AdvertisingSet set, int txPower, int status) {
+            if (destroyed || callback != this) return;
             starting = false;
             if (status == ADVERTISE_SUCCESS) {
                 advertisingSet = set;
@@ -274,13 +285,15 @@ public final class ChargeService extends Service {
 
         @Override
         public void onAdvertisingSetStopped(AdvertisingSet set) {
+            if (destroyed || callback != this) return;
             advertisingSet = null;
             publish();
         }
-    };
+    }
 
     /** Refreshes the notification and tells the screen, if it is open. */
     private void publish() {
+        if (destroyed) return;
         Intent status = new Intent(ACTION_STATUS).setPackage(getPackageName())
                 .putExtra(EXTRA_LEVEL, level)
                 .putExtra(EXTRA_CHARGING, charging)

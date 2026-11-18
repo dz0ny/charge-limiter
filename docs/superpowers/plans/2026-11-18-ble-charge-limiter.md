@@ -67,7 +67,7 @@ Run `openssl rand -hex 4`; put the four bytes in `AdvertPayload.TOKEN` and note 
 
 - [ ] **Step 4: Proof `MainActivity`**
 
-One screen with a status `TextView`. On launch: request `BLUETOOTH_ADVERTISE` (API 31+), then start legacy advertising through `BluetoothLeAdvertiser.startAdvertisingSet` with `AdvertisingSetParameters` (legacy mode, not connectable, not scannable, `INTERVAL_HIGH`, `TX_POWER_MEDIUM`) and manufacturer data `COMPANY_ID` → `TOKEN + {1, 50, 1, 0}`. Show "advertising", or the failure status code, or "this phone cannot advertise" when `getBluetoothLeAdvertiser()` is null. Manifest declares `BLUETOOTH_ADVERTISE` and legacy `BLUETOOTH`/`BLUETOOTH_ADMIN` with `maxSdkVersion="30"`.
+One screen with a status `TextView`. On launch: request `BLUETOOTH_ADVERTISE` (API 31+), then start legacy advertising through `BluetoothLeAdvertiser.startAdvertisingSet` with `AdvertisingSetParameters` (legacy mode, not connectable, not scannable, `INTERVAL_LOW` (the short, about 100 ms interval), `TX_POWER_MEDIUM`) and manufacturer data `COMPANY_ID` → `TOKEN + {1, 50, 1, 0}`. Show "advertising", or the failure status code, or "this phone cannot advertise" when `getBluetoothLeAdvertiser()` is null. Manifest declares `BLUETOOTH_ADVERTISE` and legacy `BLUETOOTH`/`BLUETOOTH_ADMIN` with `maxSdkVersion="30"`.
 
 - [ ] **Step 5: Build**
 

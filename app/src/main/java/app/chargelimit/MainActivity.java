@@ -135,7 +135,14 @@ public final class MainActivity extends Activity {
             return;
         }
         // Let a running service re-run the policy with the new thresholds.
-        if (settings.enabled()) ChargeService.start(this);
+        if (settings.enabled()) {
+            try {
+                ChargeService.start(this);
+            } catch (RuntimeException e) {
+                // Refused when this screen is already in the background and the service is not
+                // running; the new thresholds are saved and apply at the next start.
+            }
+        }
     }
 
     private void startService() {
