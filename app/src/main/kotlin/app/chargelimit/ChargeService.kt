@@ -163,7 +163,7 @@ class ChargeService : Service() {
             levelWantsOn = next
             settings.wantOn = next
         }
-        tooHot = ChargePolicy.nextTooHot(temperature, tooHot)
+        tooHot = ChargePolicy.nextTooHot(temperature, tooHot, settings.hotC)
     }
 
     private fun advertiseData(): AdvertiseData {

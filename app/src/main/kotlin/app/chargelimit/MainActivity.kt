@@ -32,6 +32,7 @@ class MainActivity : Activity() {
     private lateinit var broadcasting: TextView
     private lateinit var low: EditText
     private lateinit var high: EditText
+    private lateinit var hot: EditText
     private lateinit var toggle: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,12 +48,14 @@ class MainActivity : Activity() {
         broadcasting = findViewById(R.id.broadcasting)
         low = findViewById(R.id.low)
         high = findViewById(R.id.high)
+        hot = findViewById(R.id.hot)
         toggle = findViewById(R.id.toggle)
 
         showRange()
         val saveOnBlur = View.OnFocusChangeListener { _, focused -> if (!focused) saveRange() }
         low.onFocusChangeListener = saveOnBlur
         high.onFocusChangeListener = saveOnBlur
+        hot.onFocusChangeListener = saveOnBlur
         toggle.setOnClickListener { if (settings.enabled) stopService() else startService() }
     }
 
@@ -151,16 +154,25 @@ class MainActivity : Activity() {
     private fun showRange() {
         low.setText(settings.low.toString())
         high.setText(settings.high.toString())
+        hot.setText(settings.hotC.toString())
     }
 
-    /** Saves the two fields. On bad input, shows the stored values and the reason. */
+    /** Saves the three fields. On bad input, shows the stored values and the reason. */
     private fun saveRange() {
         val newLow = low.text.toString().trim().toIntOrNull() ?: -1
         val newHigh = high.text.toString().trim().toIntOrNull() ?: -1
-        if (newLow == settings.low && newHigh == settings.high) return
-        if (!settings.setRange(newLow, newHigh)) {
+        val newHot = hot.text.toString().trim().toIntOrNull() ?: -1
+        val rangeChanged = newLow != settings.low || newHigh != settings.high
+        val hotChanged = newHot != settings.hotC
+        if (!rangeChanged && !hotChanged) return
+        if (rangeChanged && !settings.setRange(newLow, newHigh)) {
             showRange()
             Toast.makeText(this, R.string.range_invalid, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (hotChanged && !settings.setHot(newHot)) {
+            showRange()
+            Toast.makeText(this, R.string.hot_invalid, Toast.LENGTH_LONG).show()
             return
         }
         if (!settings.enabled) return

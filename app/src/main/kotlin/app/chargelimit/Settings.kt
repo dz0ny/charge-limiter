@@ -22,6 +22,16 @@ class Settings(context: Context) {
         return true
     }
 
+    /** The battery temperature in °C at which the charger stops. */
+    val hotC: Int get() = prefs.getInt("hotC", ChargePolicy.DEFAULT_HOT_C)
+
+    /** Returns false and keeps the stored value when the temperature is not valid. */
+    fun setHot(hotC: Int): Boolean {
+        if (!ChargePolicy.validHot(hotC)) return false
+        prefs.edit().putInt("hotC", hotC).apply()
+        return true
+    }
+
     /** True when the user wants the service to run. The boot receiver reads this value. */
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", false)

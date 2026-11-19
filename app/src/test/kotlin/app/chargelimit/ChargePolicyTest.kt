@@ -50,23 +50,29 @@ class ChargePolicyTest {
     }
 
     @Test
-    fun hotAtFortyDegrees() {
-        assertFalse(ChargePolicy.nextTooHot(399, previousTooHot = false))
-        assertTrue(ChargePolicy.nextTooHot(400, previousTooHot = false))
+    fun hotAtTheLimit() {
+        assertFalse(ChargePolicy.nextTooHot(449, previousTooHot = false, hotC = 45))
+        assertTrue(ChargePolicy.nextTooHot(450, previousTooHot = false, hotC = 45))
     }
 
     @Test
-    fun staysHotUntilBelowThirtySevenDegrees() {
-        assertTrue(ChargePolicy.nextTooHot(370, previousTooHot = true))
-        assertFalse(ChargePolicy.nextTooHot(369, previousTooHot = true))
+    fun staysHotUntilThreeDegreesBelowTheLimit() {
+        assertTrue(ChargePolicy.nextTooHot(420, previousTooHot = true, hotC = 45))
+        assertFalse(ChargePolicy.nextTooHot(419, previousTooHot = true, hotC = 45))
     }
 
     @Test
-    fun temperatureJitterAtFortyGivesOneChange() {
+    fun theLimitIsAdjustable() {
+        assertTrue(ChargePolicy.nextTooHot(400, previousTooHot = false, hotC = 40))
+        assertFalse(ChargePolicy.nextTooHot(400, previousTooHot = false, hotC = 45))
+    }
+
+    @Test
+    fun temperatureJitterAtTheLimitGivesOneChange() {
         var hot = false
         var changes = 0
-        for (tenths in intArrayOf(398, 400, 396, 401, 395)) {
-            val next = ChargePolicy.nextTooHot(tenths, hot)
+        for (tenths in intArrayOf(448, 450, 446, 451, 445)) {
+            val next = ChargePolicy.nextTooHot(tenths, hot, hotC = 45)
             if (next != hot) changes++
             hot = next
         }
@@ -75,7 +81,16 @@ class ChargePolicyTest {
 
     @Test
     fun unknownTemperatureIsNotHot() {
-        assertFalse(ChargePolicy.nextTooHot(ChargePolicy.TEMPERATURE_UNKNOWN, previousTooHot = true))
+        assertFalse(ChargePolicy.nextTooHot(ChargePolicy.TEMPERATURE_UNKNOWN, previousTooHot = true, hotC = 45))
+    }
+
+    @Test
+    fun heatLimitDefaultAndRange() {
+        assertEquals(45, ChargePolicy.DEFAULT_HOT_C)
+        assertTrue(ChargePolicy.validHot(30))
+        assertTrue(ChargePolicy.validHot(60))
+        assertFalse(ChargePolicy.validHot(29))
+        assertFalse(ChargePolicy.validHot(61))
     }
 
     @Test

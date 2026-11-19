@@ -4,10 +4,12 @@
     <string name="label_battery">BATTERY</string>
     <string name="label_charger">CHARGER</string>
     <string name="label_broadcast">BLUETOOTH BROADCAST</string>
-    <string name="label_range">CHARGE RANGE</string>
+    <string name="label_limits">CHARGE LIMITS</string>
     <string name="resume_below">Resume below %</string>
     <string name="stop_at">Stop at %</string>
-    <string name="heat_note">Charging also pauses when the battery reaches 40 °C.</string>
+    <string name="pause_at">Pause at battery temperature °C</string>
+    <string name="heat_note">Charging starts again when the battery is 3 °C cooler.</string>
+    <string name="hot_invalid">The temperature must be from 30 to 60 °C</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
     <string name="unknown">–</string>

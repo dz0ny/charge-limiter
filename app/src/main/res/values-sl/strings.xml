@@ -4,10 +4,12 @@
     <string name="label_battery">BATERIJA</string>
     <string name="label_charger">POLNILNIK</string>
     <string name="label_broadcast">ODDAJANJE BLUETOOTH</string>
-    <string name="label_range">OBMOČJE POLNJENJA</string>
+    <string name="label_limits">OMEJITVE POLNJENJA</string>
     <string name="resume_below">Nadaljuj pod %</string>
     <string name="stop_at">Ustavi pri %</string>
-    <string name="heat_note">Polnjenje se začasno ustavi tudi, ko baterija doseže 40 °C.</string>
+    <string name="pause_at">Začasno ustavi pri temperaturi baterije °C</string>
+    <string name="heat_note">Polnjenje se nadaljuje, ko je baterija za 3 °C hladnejša.</string>
+    <string name="hot_invalid">Temperatura mora biti med 30 in 60 °C</string>
     <string name="start">Zaženi</string>
     <string name="stop">Ustavi</string>
     <string name="unknown">–</string>
