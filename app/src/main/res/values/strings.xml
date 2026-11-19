@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Charge Limiter</string>
+    <string name="label_battery">BATTERY</string>
+    <string name="label_charger">CHARGER</string>
+    <string name="label_broadcast">BLUETOOTH BROADCAST</string>
+    <string name="label_range">CHARGE RANGE</string>
+    <string name="resume_below">Resume below %</string>
+    <string name="stop_at">Stop at %</string>
+    <string name="heat_note">Charging also pauses when the battery reaches 40 °C.</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="unknown">–</string>
+    <string name="level_percent">%1$d%%</string>
+    <string name="charging">Charging</string>
+    <string name="not_charging">Not charging</string>
+    <string name="battery_detail_temp">%1$s  ·  %2$d °C</string>
+    <string name="service_stopped">Service is stopped</string>
+    <string name="broadcast_off">Off</string>
+    <string name="broadcast_active">Active</string>
+    <string name="broadcast_off_reason">Off – %1$s</string>
+    <string name="charger_paused_hot">Paused – battery is hot</string>
+    <string name="charger_on">On – charging to %1$d%%</string>
+    <string name="charger_off">Off – limit reached</string>
+    <string name="range_invalid">Resume below must be less than Stop at (0–100)</string>
+    <string name="error_permission">Bluetooth permission is needed</string>
+    <string name="error_no_bluetooth">This phone has no Bluetooth</string>
+    <string name="error_bluetooth_off">Bluetooth is off</string>
+    <string name="error_no_advertiser">This phone cannot broadcast over Bluetooth</string>
+    <string name="error_start_failed">Could not start broadcasting: %1$s</string>
+    <string name="error_status">Broadcasting failed (status %1$d)</string>
+    <string name="notif_channel">Status</string>
+    <string name="notif_title_level">Battery %1$d%%</string>
+    <string name="notif_charger_on">Charger wanted on</string>
+    <string name="notif_charger_off">Charger wanted off</string>
+    <string name="notif_hot">Charger wanted off, battery is hot</string>
+    <string name="notif_starting">Starting</string>
+</resources>

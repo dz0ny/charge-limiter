@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
@@ -16,12 +17,17 @@ import android.os.PowerManager
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 
 class MainActivity : Activity() {
     private lateinit var settings: Settings
     private lateinit var battery: TextView
+    private lateinit var batteryDetail: TextView
+    private lateinit var levelBar: ProgressBar
+    private lateinit var wantedDot: View
+    private lateinit var broadcastDot: View
     private lateinit var wanted: TextView
     private lateinit var broadcasting: TextView
     private lateinit var low: EditText
@@ -33,6 +39,10 @@ class MainActivity : Activity() {
         setContentView(R.layout.main)
         settings = Settings(this)
         battery = findViewById(R.id.battery)
+        batteryDetail = findViewById(R.id.batteryDetail)
+        levelBar = findViewById(R.id.levelBar)
+        wantedDot = findViewById(R.id.wantedDot)
+        broadcastDot = findViewById(R.id.broadcastDot)
         wanted = findViewById(R.id.wanted)
         broadcasting = findViewById(R.id.broadcasting)
         low = findViewById(R.id.low)
@@ -59,6 +69,8 @@ class MainActivity : Activity() {
         } else {
             registerReceiver(receiver, filter)
         }
+        // An app update stops the service. Start it again when the user wants it to run.
+        if (settings.enabled && ChargeService.lastStatus == null) ChargeService.start(this)
         showStatus(ChargeService.lastStatus)
         showToggle()
     }
@@ -81,32 +93,59 @@ class MainActivity : Activity() {
         if (raw < 0 || scale <= 0) return
         val charging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
         val tenths = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, ChargePolicy.TEMPERATURE_UNKNOWN)
-        val degrees = if (tenths == ChargePolicy.TEMPERATURE_UNKNOWN) "" else "  ${tenths / 10} °C"
-        battery.text = "${raw * 100 / scale} %  ${if (charging) "charging" else "not charging"}$degrees"
+        val level = raw * 100 / scale
+        battery.text = getString(R.string.level_percent, level)
+        levelBar.progress = level
+        val state = getString(if (charging) R.string.charging else R.string.not_charging)
+        batteryDetail.text = if (tenths == ChargePolicy.TEMPERATURE_UNKNOWN) {
+            state
+        } else {
+            getString(R.string.battery_detail_temp, state, tenths / 10)
+        }
     }
 
     private fun showStatus(status: Intent?) {
         if (status == null || !settings.enabled) {
-            wanted.text = "–"
-            broadcasting.text = "no"
+            wanted.setText(R.string.service_stopped)
+            broadcasting.setText(R.string.broadcast_off)
+            tint(wantedDot, R.color.status_off)
+            tint(broadcastDot, R.color.status_off)
             return
         }
+        val tooHot = status.getBooleanExtra(ChargeService.EXTRA_TOO_HOT, false)
+        val wantOn = status.getBooleanExtra(ChargeService.EXTRA_WANT_ON, true)
         wanted.text = when {
-            status.getBooleanExtra(ChargeService.EXTRA_TOO_HOT, false) -> "OFF – battery is hot"
-            status.getBooleanExtra(ChargeService.EXTRA_WANT_ON, true) -> "ON"
-            else -> "OFF"
+            tooHot -> getString(R.string.charger_paused_hot)
+            wantOn -> getString(R.string.charger_on, settings.high)
+            else -> getString(R.string.charger_off)
         }
+        tint(
+            wantedDot,
+            when {
+                tooHot -> R.color.status_warn
+                wantOn -> R.color.status_on
+                else -> R.color.status_off
+            },
+        )
         val error = status.getStringExtra(ChargeService.EXTRA_ERROR)
         val on = status.getBooleanExtra(ChargeService.EXTRA_BROADCASTING, false)
         broadcasting.text = when {
-            on -> "yes"
-            error == null -> "no"
-            else -> "no – $error"
+            on -> getString(R.string.broadcast_active)
+            error == null -> getString(R.string.broadcast_off)
+            else -> getString(R.string.broadcast_off_reason, error)
         }
+        tint(broadcastDot, if (on) R.color.status_on else R.color.status_warn)
+    }
+
+    private fun tint(dot: View, color: Int) {
+        dot.backgroundTintList = ColorStateList.valueOf(getColor(color))
     }
 
     private fun showToggle() {
-        toggle.text = if (settings.enabled) "Stop service" else "Start service"
+        val running = settings.enabled
+        toggle.setText(if (running) R.string.stop else R.string.start)
+        toggle.setBackgroundResource(if (running) R.drawable.button_tonal else R.drawable.button_primary)
+        toggle.setTextColor(getColor(if (running) R.color.on_surface else R.color.on_accent))
     }
 
     private fun showRange() {
@@ -121,7 +160,7 @@ class MainActivity : Activity() {
         if (newLow == settings.low && newHigh == settings.high) return
         if (!settings.setRange(newLow, newHigh)) {
             showRange()
-            Toast.makeText(this, "Charge below must be less than Stop at (0–100)", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.range_invalid, Toast.LENGTH_LONG).show()
             return
         }
         if (!settings.enabled) return
@@ -153,7 +192,9 @@ class MainActivity : Activity() {
         if (requestCode != REQUEST_PERMISSIONS) return
         // The app can work without notifications. It cannot broadcast without Bluetooth.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !granted(Manifest.permission.BLUETOOTH_ADVERTISE)) {
-            broadcasting.text = "no – Bluetooth permission is needed to broadcast"
+            broadcasting.text =
+                getString(R.string.broadcast_off_reason, getString(R.string.error_permission))
+            tint(broadcastDot, R.color.status_warn)
             return
         }
         launch()

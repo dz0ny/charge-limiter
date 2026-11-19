@@ -57,7 +57,7 @@ class ChargeService : Service() {
         settings = Settings(this)
         levelWantsOn = settings.wantOn
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, "Status", NotificationManager.IMPORTANCE_LOW),
+            NotificationChannel(CHANNEL, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW),
         )
     }
 
@@ -144,7 +144,7 @@ class ChargeService : Service() {
                     // The Bluetooth stack removes the advertising set when Bluetooth goes off.
                     stopAdvertising()
                     advertiser = null
-                    error = "Bluetooth is off"
+                    error = getString(R.string.error_bluetooth_off)
                 }
             }
             publish()
@@ -180,21 +180,21 @@ class ChargeService : Service() {
     private fun startAdvertising() {
         if (advertisingSet != null || starting) return
         if (!hasAdvertisePermission()) {
-            error = "Bluetooth permission is needed to broadcast"
+            error = getString(R.string.error_permission)
             return
         }
         val adapter = getSystemService(BluetoothManager::class.java)?.adapter
         if (adapter == null) {
-            error = "This phone has no Bluetooth"
+            error = getString(R.string.error_no_bluetooth)
             return
         }
         if (!adapter.isEnabled) {
-            error = "Bluetooth is off"
+            error = getString(R.string.error_bluetooth_off)
             return
         }
         val leAdvertiser = adapter.bluetoothLeAdvertiser
         if (leAdvertiser == null) {
-            error = "This phone cannot broadcast over Bluetooth"
+            error = getString(R.string.error_no_advertiser)
             return
         }
         advertiser = leAdvertiser
@@ -216,7 +216,7 @@ class ChargeService : Service() {
         } catch (e: RuntimeException) {
             starting = false
             callback = null
-            error = "Could not start broadcasting: ${e.message}"
+            error = getString(R.string.error_start_failed, e.message)
             Log.w(TAG, "startAdvertisingSet failed", e)
         }
     }
@@ -258,7 +258,7 @@ class ChargeService : Service() {
                 updateAdvert()
             } else {
                 advertisingSet = null
-                error = "Broadcasting failed (status $status)"
+                error = getString(R.string.error_status, status)
             }
             publish()
         }
@@ -286,11 +286,12 @@ class ChargeService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        val title = if (level < 0) "Charge Limiter" else "Battery $level %"
+        val title = if (level < 0) getString(R.string.app_name) else getString(R.string.notif_title_level, level)
         val text = when {
-            advertisingSet != null && tooHot -> "Charger wanted OFF, battery is hot"
-            advertisingSet != null -> "Charger wanted ${if (wantOn) "ON" else "OFF"}"
-            else -> error ?: "Starting"
+            advertisingSet != null && tooHot -> getString(R.string.notif_hot)
+            advertisingSet != null && wantOn -> getString(R.string.notif_charger_on)
+            advertisingSet != null -> getString(R.string.notif_charger_off)
+            else -> error ?: getString(R.string.notif_starting)
         }
         val open = PendingIntent.getActivity(
             this,

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Omejevalnik polnjenja</string>
+    <string name="label_battery">BATERIJA</string>
+    <string name="label_charger">POLNILNIK</string>
+    <string name="label_broadcast">ODDAJANJE BLUETOOTH</string>
+    <string name="label_range">OBMOČJE POLNJENJA</string>
+    <string name="resume_below">Nadaljuj pod %</string>
+    <string name="stop_at">Ustavi pri %</string>
+    <string name="heat_note">Polnjenje se začasno ustavi tudi, ko baterija doseže 40 °C.</string>
+    <string name="start">Zaženi</string>
+    <string name="stop">Ustavi</string>
+    <string name="unknown">–</string>
+    <string name="level_percent">%1$d %%</string>
+    <string name="charging">Se polni</string>
+    <string name="not_charging">Se ne polni</string>
+    <string name="battery_detail_temp">%1$s  ·  %2$d °C</string>
+    <string name="service_stopped">Storitev je ustavljena</string>
+    <string name="broadcast_off">Izklopljeno</string>
+    <string name="broadcast_active">Aktivno</string>
+    <string name="broadcast_off_reason">Izklopljeno – %1$s</string>
+    <string name="charger_paused_hot">Začasno ustavljen – baterija je vroča</string>
+    <string name="charger_on">Vklopljen – polnjenje do %1$d %%</string>
+    <string name="charger_off">Izklopljen – meja je dosežena</string>
+    <string name="range_invalid">»Nadaljuj pod« mora biti manj kot »Ustavi pri« (0–100)</string>
+    <string name="error_permission">Potrebno je dovoljenje za Bluetooth</string>
+    <string name="error_no_bluetooth">Ta telefon nima Bluetootha</string>
+    <string name="error_bluetooth_off">Bluetooth je izklopljen</string>
+    <string name="error_no_advertiser">Ta telefon ne more oddajati prek Bluetootha</string>
+    <string name="error_start_failed">Oddajanja ni bilo mogoče zagnati: %1$s</string>
+    <string name="error_status">Oddajanje ni uspelo (stanje %1$d)</string>
+    <string name="notif_channel">Stanje</string>
+    <string name="notif_title_level">Baterija %1$d %%</string>
+    <string name="notif_charger_on">Polnilnik naj bo vklopljen</string>
+    <string name="notif_charger_off">Polnilnik naj bo izklopljen</string>
+    <string name="notif_hot">Polnilnik naj bo izklopljen, baterija je vroča</string>
+    <string name="notif_starting">Zaganjanje</string>
+</resources>

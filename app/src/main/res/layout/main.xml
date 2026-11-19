@@ -4,61 +4,208 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:text="Charge Limiter"
-        android:textAppearance="@android:style/TextAppearance.Material.Headline" />
-
-    <GridLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="2"
-        android:useDefaultMargins="true">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-        <TextView android:text="Battery" />
-        <TextView android:id="@+id/battery" android:text="–" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="24dp">
 
-        <TextView android:text="Charger wanted" />
-        <TextView android:id="@+id/wanted" android:text="–" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="20dp"
+                android:text="@string/app_name"
+                android:textColor="@color/on_surface"
+                android:textSize="28sp" />
 
-        <TextView android:text="Broadcasting" />
-        <TextView
-            android:id="@+id/broadcasting"
-            android:layout_width="0dp"
-            android:layout_columnWeight="1"
-            android:layout_gravity="fill_horizontal"
-            android:text="no" />
+            <LinearLayout style="@style/Card">
 
-        <TextView android:labelFor="@+id/low" android:text="Charge below (%)" />
-        <EditText
-            android:id="@+id/low"
-            android:ems="4"
-            android:importantForAutofill="no"
-            android:inputType="number"
-            android:maxLength="3" />
+                <TextView
+                    style="@style/Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_battery" />
 
-        <TextView android:labelFor="@+id/high" android:text="Stop at (%)" />
-        <EditText
-            android:id="@+id/high"
-            android:ems="4"
-            android:importantForAutofill="no"
-            android:inputType="number"
-            android:maxLength="3" />
-    </GridLayout>
+                <TextView
+                    android:id="@+id/battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:text="@string/unknown"
+                    android:textColor="@color/on_surface"
+                    android:textSize="64sp" />
 
-    <Button
-        android:id="@+id/toggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="Start service" />
-</LinearLayout>
+                <ProgressBar
+                    android:id="@+id/levelBar"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:layout_marginTop="4dp"
+                    android:max="100"
+                    android:progressDrawable="@drawable/level_bar" />
+
+                <TextView
+                    android:id="@+id/batteryDetail"
+                    style="@style/Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/Card">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/wantedDot"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginEnd="14dp"
+                        android:background="@drawable/dot" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_charger" />
+
+                        <TextView
+                            android:id="@+id/wanted"
+                            style="@style/Value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/unknown" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/broadcastDot"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginEnd="14dp"
+                        android:background="@drawable/dot" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_broadcast" />
+
+                        <TextView
+                            android:id="@+id/broadcasting"
+                            style="@style/Value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/broadcast_off" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout style="@style/Card">
+
+                <TextView
+                    style="@style/Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:text="@string/label_range" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/Value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:labelFor="@+id/low"
+                            android:text="@string/resume_below" />
+
+                        <EditText
+                            android:id="@+id/low"
+                            style="@style/LimitField" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/Value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:labelFor="@+id/high"
+                            android:text="@string/stop_at" />
+
+                        <EditText
+                            android:id="@+id/high"
+                            style="@style/LimitField" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/heat_note" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/toggle"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/button_primary"
+                android:stateListAnimator="@null"
+                android:text="@string/start"
+                android:textAllCaps="false"
+                android:textColor="@color/on_accent"
+                android:textSize="17sp" />
+        </LinearLayout>
+    </ScrollView>
 </FrameLayout>
