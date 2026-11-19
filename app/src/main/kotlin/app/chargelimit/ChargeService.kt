@@ -112,6 +112,12 @@ class ChargeService : Service() {
         super.onDestroy()
     }
 
+    // A language change must show in the notification immediately.
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        publish()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     private val batteryReceiver = object : BroadcastReceiver() {
