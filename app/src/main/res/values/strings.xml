@@ -12,6 +12,9 @@
     <string name="hot_invalid">The temperature must be from 30 to 60 °C</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
+    <string name="stop_title">Stop the charge limit?</string>
+    <string name="stop_message">The charger will stay on and the battery will charge to 100% until you start the service again.</string>
+    <string name="keep_running">Keep running</string>
     <string name="unknown">–</string>
     <string name="level_percent">%1$d%%</string>
     <string name="charging">Charging</string>

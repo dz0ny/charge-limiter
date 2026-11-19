@@ -12,6 +12,9 @@
     <string name="hot_invalid">Temperatura mora biti med 30 in 60 °C</string>
     <string name="start">Zaženi</string>
     <string name="stop">Ustavi</string>
+    <string name="stop_title">Ustavim omejitev polnjenja?</string>
+    <string name="stop_message">Polnilnik bo ostal vklopljen in baterija se bo polnila do 100 %, dokler storitve znova ne zaženete.</string>
+    <string name="keep_running">Naj teče naprej</string>
     <string name="unknown">–</string>
     <string name="level_percent">%1$d %%</string>
     <string name="charging">Se polni</string>

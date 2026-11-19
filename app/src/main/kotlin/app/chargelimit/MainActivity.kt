@@ -3,6 +3,7 @@ package app.chargelimit
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -56,7 +57,7 @@ class MainActivity : Activity() {
         low.onFocusChangeListener = saveOnBlur
         high.onFocusChangeListener = saveOnBlur
         hot.onFocusChangeListener = saveOnBlur
-        toggle.setOnClickListener { if (settings.enabled) stopService() else startService() }
+        toggle.setOnClickListener { if (settings.enabled) confirmStop() else startService() }
     }
 
     // Android 13 added the not-exported flag.
@@ -227,6 +228,16 @@ class MainActivity : Activity() {
                 ),
             )
         }
+    }
+
+    /** Asks before the stop. An accidental tap must not remove the charge limit. */
+    private fun confirmStop() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.stop_title)
+            .setMessage(R.string.stop_message)
+            .setNegativeButton(R.string.keep_running, null)
+            .setPositiveButton(R.string.stop) { _, _ -> stopService() }
+            .show()
     }
 
     private fun stopService() {
