@@ -11,8 +11,27 @@ android {
         applicationId 'app.chargelimit'
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName '0.1'
+        versionCode((System.getenv('VERSION_CODE') ?: '1') as Integer)
+        versionName System.getenv('VERSION') ?: '0.1-dev'
+    }
+
+    def keystore = System.getenv('KEYSTORE_FILE')
+    signingConfigs {
+        release {
+            if (keystore) {
+                storeFile file(keystore)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig keystore ? signingConfigs.release : signingConfigs.debug
+        }
     }
 
     compileOptions {
