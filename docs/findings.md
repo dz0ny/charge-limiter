@@ -1,7 +1,8 @@
 # Findings
 
 - Token (hex): `6ce29d77` — same value in `AdvertPayload.TOKEN` and the Shelly script's `CONFIG.token`.
-- Phone model / Android version: not recorded yet (no device on adb).
+- Phone: POCO X8 Pro (2511FPC34G), Android 16, HyperOS. USB install was blocked; installed from the Download folder.
+- 2026-11-19 on the phone: service in foreground, BLE advertising running at interval 160 (100 ms), TX power -7 dBm. Battery read 41.2 °C on USB power, so the heat guard was active.
 - Shelly firmware / scan filter support: not recorded yet.
 
 ## Decisions after the plan
