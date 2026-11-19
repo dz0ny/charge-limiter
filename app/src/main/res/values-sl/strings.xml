@@ -54,4 +54,5 @@
     <string name="notif_channel_updates">Posodobitve</string>
     <string name="notif_update_title">Na voljo je posodobitev</string>
     <string name="notif_update_text">Omejevalnik polnjenja %1$s. Tapnite za namestitev.</string>
+    <string name="menu_more">Več</string>
 </resources>

@@ -21,6 +21,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -38,7 +40,8 @@ class MainActivity : Activity() {
     private lateinit var high: EditText
     private lateinit var hot: EditText
     private lateinit var toggle: Button
-    private lateinit var version: TextView
+    private lateinit var stopHold: Button
+    private lateinit var menu: ImageButton
     private lateinit var update: Button
     private var holdAnimator: ValueAnimator? = null
     private var pendingRelease: Updater.Release? = null
@@ -58,7 +61,8 @@ class MainActivity : Activity() {
         high = findViewById(R.id.high)
         hot = findViewById(R.id.hot)
         toggle = findViewById(R.id.toggle)
-        version = findViewById(R.id.version)
+        stopHold = findViewById(R.id.stopHold)
+        menu = findViewById(R.id.menu)
         update = findViewById(R.id.update)
 
         showRange()
@@ -66,9 +70,11 @@ class MainActivity : Activity() {
         low.onFocusChangeListener = saveOnBlur
         high.onFocusChangeListener = saveOnBlur
         hot.onFocusChangeListener = saveOnBlur
-        toggle.setOnClickListener { if (settings.enabled) confirmStop() else startService() }
-        toggle.setOnTouchListener { _, event -> settings.enabled && onHoldTouch(event) }
-        update.setOnClickListener { pendingRelease?.let(::installUpdate) ?: checkForUpdate() }
+        toggle.setOnClickListener { startService() }
+        stopHold.setOnClickListener { confirmStop() }
+        stopHold.setOnTouchListener { _, event -> onHoldTouch(event) }
+        update.setOnClickListener { pendingRelease?.let(::installUpdate) }
+        menu.setOnClickListener { showMenu() }
     }
 
     // Android 13 added the not-exported flag.
@@ -89,7 +95,7 @@ class MainActivity : Activity() {
         if (settings.enabled && ChargeService.lastStatus == null) ChargeService.start(this)
         showStatus(ChargeService.lastStatus)
         showToggle()
-        showVersion()
+        checkDaily()
     }
 
     override fun onStop() {
@@ -165,9 +171,8 @@ class MainActivity : Activity() {
 
     private fun showToggle() {
         val running = settings.enabled
-        toggle.setText(if (running) R.string.hold_to_stop else R.string.start)
-        toggle.setBackgroundResource(if (running) R.drawable.button_hold else R.drawable.button_primary)
-        toggle.setTextColor(getColor(if (running) R.color.on_surface else R.color.on_accent))
+        toggle.visibility = if (running) View.GONE else View.VISIBLE
+        stopHold.visibility = if (running) View.VISIBLE else View.GONE
     }
 
     private fun showRange() {
@@ -266,7 +271,7 @@ class MainActivity : Activity() {
         return true
     }
 
-    private fun holdFill() = (toggle.background as? LayerDrawable)?.findDrawableByLayerId(R.id.fill)
+    private fun holdFill() = (stopHold.background as? LayerDrawable)?.findDrawableByLayerId(R.id.fill)
 
     private fun startHold() {
         cancelHold()
@@ -293,32 +298,46 @@ class MainActivity : Activity() {
         holdFill()?.level = 0
     }
 
-    private fun showVersion() {
+    /** Shows the menu with the version and the check for updates. */
+    private fun showMenu() {
         val current = Updater.currentVersion(this)
-        version.text = getString(R.string.version_label, current)
-        if (!UpdatePolicy.canSelfUpdate(current)) {
-            update.setText(R.string.update_dev)
-            update.isEnabled = false
-            return
+        val popup = PopupMenu(this, menu)
+        popup.menu.add(getString(R.string.version_label, current)).isEnabled = false
+        if (UpdatePolicy.canSelfUpdate(current)) {
+            popup.menu.add(R.string.update_check).setOnMenuItemClickListener {
+                checkForUpdate(byUser = true)
+                true
+            }
+        } else {
+            popup.menu.add(R.string.update_dev).isEnabled = false
         }
-        if (pendingRelease == null && UpdatePolicy.dueForCheck(System.currentTimeMillis(), settings.lastUpdateCheck)) {
-            checkForUpdate()
+        popup.show()
+    }
+
+    /** Looks for an update one time each day when the screen opens. */
+    private fun checkDaily() {
+        if (!UpdatePolicy.canSelfUpdate(Updater.currentVersion(this))) return
+        if (pendingRelease != null) return
+        if (UpdatePolicy.dueForCheck(System.currentTimeMillis(), settings.lastUpdateCheck)) {
+            checkForUpdate(byUser = false)
         }
     }
 
-    private fun checkForUpdate() {
-        update.isEnabled = false
-        update.setText(R.string.update_checking)
+    /** Shows the update button for a newer release. Tells the result only when the user asked. */
+    private fun checkForUpdate(byUser: Boolean) {
+        if (byUser) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
         settings.lastUpdateCheck = System.currentTimeMillis()
         Updater.background({ Updater.newerRelease(applicationContext) }) { result ->
             if (isDestroyed) return@background
-            update.isEnabled = true
             val release = result.getOrNull()
             pendingRelease = release
-            update.text = when {
-                result.isFailure -> getString(R.string.update_check_failed)
-                release == null -> getString(R.string.update_none)
-                else -> getString(R.string.update_available, release.version)
+            if (release != null) {
+                update.text = getString(R.string.update_available, release.version)
+                update.isEnabled = true
+                update.visibility = View.VISIBLE
+            } else if (byUser) {
+                val message = if (result.isFailure) R.string.update_check_failed else R.string.update_none
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -334,6 +353,7 @@ class MainActivity : Activity() {
 
     private fun showUpdateFailed(message: String?) {
         update.isEnabled = true
+        update.visibility = View.VISIBLE
         update.text = getString(R.string.update_failed, message.orEmpty())
     }
 

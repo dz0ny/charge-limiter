@@ -114,7 +114,8 @@ OnePlus, also enable **Autostart** for the app and set its battery saver to
 ## Updates
 
 The app checks this repository's releases once a day and when you open it. When
-a newer version exists it shows a notification and an **Update to …** button.
+a newer version exists it shows a notification and an **Update to …** button
+at the top. You can also check by hand from the ⋮ menu.
 The update is downloaded from GitHub and handed to Android's installer, which
 only accepts it if it carries the same signing key as the installed app.
 

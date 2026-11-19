@@ -54,4 +54,5 @@
     <string name="notif_channel_updates">Updates</string>
     <string name="notif_update_title">Update available</string>
     <string name="notif_update_text">Charge Limiter %1$s. Tap to install.</string>
+    <string name="menu_more">More</string>
 </resources>
