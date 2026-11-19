@@ -6,19 +6,22 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
-# Builds the APK and publishes a GitHub Release with the APK and the Shelly script.
-# The job attaches the files to a draft release and publishes it as the last step.
-# Set these repository secrets to sign with a stable key:
-#   KEYSTORE_BASE64     base64 of the release keystore
-#   KEYSTORE_PASSWORD   password of the keystore
-#   KEY_ALIAS           alias of the key
-#   KEY_PASSWORD        password of the key
-# Without the secrets, the job signs with a temporary debug key.
+# The build job makes the APK. The publish job makes the GitHub Release.
+# Only the publish job can write to the repository, and it runs no build tools.
+# Both jobs use only actions from GitHub.
+
+# Set four repository secrets to sign with a stable key.
+# KEYSTORE_BASE64 is the base64 text of the release keystore.
+# KEYSTORE_PASSWORD is the password of the keystore.
+# KEY_ALIAS is the alias of the key.
+# KEY_PASSWORD is the password of the key.
+
+# Without the secrets, the build job signs with a temporary debug key.
 # Android refuses to update an app when the key changes.
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +29,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -50,7 +52,6 @@ jobs:
           else
             export VERSION="0.0.${VERSION_CODE}-dev"
           fi
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           if [ -n "${KEYSTORE_BASE64}" ]; then
             echo "${KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/release.jks"
             export KEYSTORE_FILE="${RUNNER_TEMP}/release.jks"
@@ -58,20 +59,34 @@ jobs:
             echo "::warning::No release keystore. The APK has a temporary debug signature."
           fi
           ./gradlew assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "charge-limiter-${VERSION}.apk"
           rm -f "${RUNNER_TEMP}/release.jks"
+          mkdir dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/charge-limiter-${VERSION}.apk"
+          cp shelly/charge-limiter.js dist/
 
       - uses: actions/upload-artifact@v4
         with:
           name: charge-limiter-release
-          path: charge-limiter-*.apk
+          path: dist/
 
+  publish:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: charge-limiter-release
+          path: dist
+
+      # The job attaches the files to a draft release and publishes it as the last step.
       - name: Publish the release
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          gh release create "${TAG}" --draft --generate-notes --title "${TAG}" \
-            "charge-limiter-${VERSION}.apk" shelly/charge-limiter.js
+          gh release create "${TAG}" --draft --generate-notes --title "${TAG}" dist/*
           gh release edit "${TAG}" --draft=false
