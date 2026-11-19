@@ -32,6 +32,11 @@ class Settings(context: Context) {
         return true
     }
 
+    /** The time of the last check for an update, in milliseconds. */
+    var lastUpdateCheck: Long
+        get() = prefs.getLong("lastUpdateCheck", 0)
+        set(value) = prefs.edit().putLong("lastUpdateCheck", value).apply()
+
     /** True when the user wants the service to run. The boot receiver reads this value. */
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", false)

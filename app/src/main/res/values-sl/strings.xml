@@ -40,4 +40,18 @@
     <string name="notif_charger_off">Polnilnik naj bo izklopljen</string>
     <string name="notif_hot">Polnilnik naj bo izklopljen, baterija je vroča</string>
     <string name="notif_starting">Zaganjanje</string>
+    <string name="hold_to_stop">Držite za ustavitev</string>
+    <string name="hold_hint">Za ustavitev držite gumb 2 sekundi</string>
+    <string name="version_label">Različica %1$s</string>
+    <string name="update_check">Preveri posodobitve</string>
+    <string name="update_checking">Preverjam …</string>
+    <string name="update_none">Imate najnovejšo različico</string>
+    <string name="update_available">Posodobi na %1$s</string>
+    <string name="update_downloading">Prenašam …</string>
+    <string name="update_failed">Posodobitev ni uspela: %1$s</string>
+    <string name="update_check_failed">Posodobitev ni bilo mogoče preveriti</string>
+    <string name="update_dev">Testna različica, posodobitve so izklopljene</string>
+    <string name="notif_channel_updates">Posodobitve</string>
+    <string name="notif_update_title">Na voljo je posodobitev</string>
+    <string name="notif_update_text">Omejevalnik polnjenja %1$s. Tapnite za namestitev.</string>
 </resources>

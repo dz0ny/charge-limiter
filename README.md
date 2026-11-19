@@ -21,8 +21,8 @@ and switches the power.
 
 Many phones cannot cap their own charge level, and a battery kept full and warm
 ages fastest. This moves the cap outside the phone: the phone only says what it
-wants, and the relay cuts the charger. Nothing goes through the cloud or Wi-Fi,
-and the Shelly keeps its stock firmware.
+wants, and the relay cuts the charger. Charging control never touches the cloud
+or Wi-Fi, and the Shelly keeps its stock firmware.
 
 > **Status:** the app runs on a real phone and broadcasts. The Shelly script
 > passes its tests on a computer but has not yet been run on a Shelly.
@@ -34,8 +34,10 @@ and the Shelly keeps its stock firmware.
 - One-way Bluetooth broadcast: no pairing, no connection to keep alive
 - Fails safe: if the relay stops hearing the phone, the charger turns back on
 - Survives screen-off, reboot (also before the first unlock) and app updates
+- Stopping takes a two-second hold and a confirmation, so it can't happen by accident
+- Updates itself from GitHub Releases
 - English and Slovenian, light and dark theme
-- No account, no internet permission, no app store
+- No account and no app store
 
 ## Feature Overview
 
@@ -47,6 +49,7 @@ and the Shelly keeps its stock firmware.
 | Notification | Permanent status line while the service runs |
 | Failsafe | Silence timeout in the script, plus a firmware timer on every "off" |
 | Relay protection | At least 30 seconds between relay changes |
+| Updates | Daily check, a notification when a release is out, one tap to install |
 
 ## Screens
 
@@ -108,6 +111,18 @@ OnePlus, also enable **Autostart** for the app and set its battery saver to
 3. Enable **Run on startup**, then start the script.
 4. Set the switch's power-on default to **On**.
 
+## Updates
+
+The app checks this repository's releases once a day and when you open it. When
+a newer version exists it shows a notification and an **Update to …** button.
+The update is downloaded from GitHub and handed to Android's installer, which
+only accepts it if it carries the same signing key as the installed app.
+
+The first update asks you to allow the app to install apps, and Android asks
+you to confirm the install. Later updates may install without a question,
+depending on the Android version. This is the only thing the app uses the
+internet for. Test builds (versions ending in `-dev`) do not update themselves.
+
 ## Settings
 
 | Setting | Default | Range |
@@ -126,8 +141,10 @@ Script timings live in the `CONFIG` block at the top of `charge-limiter.js`.
 
 - **Unsigned broadcast.** Anyone in Bluetooth range who copies the advert can
   toggle the charger. Nothing else is exposed.
-- **One phone, one relay.** The token is fixed in the source; to pair a
-  different set, change it in `AdvertPayload.kt` and in the script's `CONFIG`.
+- **One shared token.** The token is fixed in the source, so every copy of a
+  release uses the same one. Two people running this within Bluetooth range of
+  each other would drive each other's relay. To make a set your own, change the
+  token in `AdvertPayload.kt` and in the script's `CONFIG`, and build it yourself.
 - **Heat guard needs the charger behind the relay.** It cannot slow charging,
   only cut it.
 - **Not yet proven on a Shelly.** See the status note at the top.

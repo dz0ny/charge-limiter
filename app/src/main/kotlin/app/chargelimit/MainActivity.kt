@@ -1,6 +1,7 @@
 package app.chargelimit
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
@@ -10,11 +11,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.drawable.LayerDrawable
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -35,6 +38,10 @@ class MainActivity : Activity() {
     private lateinit var high: EditText
     private lateinit var hot: EditText
     private lateinit var toggle: Button
+    private lateinit var version: TextView
+    private lateinit var update: Button
+    private var holdAnimator: ValueAnimator? = null
+    private var pendingRelease: Updater.Release? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +58,8 @@ class MainActivity : Activity() {
         high = findViewById(R.id.high)
         hot = findViewById(R.id.hot)
         toggle = findViewById(R.id.toggle)
+        version = findViewById(R.id.version)
+        update = findViewById(R.id.update)
 
         showRange()
         val saveOnBlur = View.OnFocusChangeListener { _, focused -> if (!focused) saveRange() }
@@ -58,6 +67,8 @@ class MainActivity : Activity() {
         high.onFocusChangeListener = saveOnBlur
         hot.onFocusChangeListener = saveOnBlur
         toggle.setOnClickListener { if (settings.enabled) confirmStop() else startService() }
+        toggle.setOnTouchListener { _, event -> settings.enabled && onHoldTouch(event) }
+        update.setOnClickListener { pendingRelease?.let(::installUpdate) ?: checkForUpdate() }
     }
 
     // Android 13 added the not-exported flag.
@@ -68,6 +79,7 @@ class MainActivity : Activity() {
         super.onStart()
         val filter = IntentFilter(ChargeService.ACTION_STATUS)
         filter.addAction(Intent.ACTION_BATTERY_CHANGED)
+        filter.addAction(UpdateReceiver.ACTION_FAILED)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -77,17 +89,23 @@ class MainActivity : Activity() {
         if (settings.enabled && ChargeService.lastStatus == null) ChargeService.start(this)
         showStatus(ChargeService.lastStatus)
         showToggle()
+        showVersion()
     }
 
     override fun onStop() {
         unregisterReceiver(receiver)
+        cancelHold()
         saveRange()
         super.onStop()
     }
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == Intent.ACTION_BATTERY_CHANGED) showBattery(intent) else showStatus(intent)
+            when (intent.action) {
+                Intent.ACTION_BATTERY_CHANGED -> showBattery(intent)
+                UpdateReceiver.ACTION_FAILED -> showUpdateFailed(intent.getStringExtra(UpdateReceiver.EXTRA_MESSAGE))
+                else -> showStatus(intent)
+            }
         }
     }
 
@@ -147,8 +165,8 @@ class MainActivity : Activity() {
 
     private fun showToggle() {
         val running = settings.enabled
-        toggle.setText(if (running) R.string.stop else R.string.start)
-        toggle.setBackgroundResource(if (running) R.drawable.button_tonal else R.drawable.button_primary)
+        toggle.setText(if (running) R.string.hold_to_stop else R.string.start)
+        toggle.setBackgroundResource(if (running) R.drawable.button_hold else R.drawable.button_primary)
         toggle.setTextColor(getColor(if (running) R.color.on_surface else R.color.on_accent))
     }
 
@@ -230,6 +248,95 @@ class MainActivity : Activity() {
         }
     }
 
+    /**
+     * Handles a touch on the button while the service runs.
+     * The user must hold the button for two seconds. A short tap only shows a hint.
+     * A screen reader calls the click listener directly, which opens the question.
+     */
+    private fun onHoldTouch(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> startHold()
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (holdAnimator != null) {
+                    cancelHold()
+                    Toast.makeText(this, R.string.hold_hint, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        return true
+    }
+
+    private fun holdFill() = (toggle.background as? LayerDrawable)?.findDrawableByLayerId(R.id.fill)
+
+    private fun startHold() {
+        cancelHold()
+        holdAnimator = ValueAnimator.ofInt(0, MAX_LEVEL).apply {
+            duration = HOLD_MS
+            addUpdateListener { animator ->
+                val level = animator.animatedValue as Int
+                holdFill()?.level = level
+                if (level >= MAX_LEVEL && holdAnimator != null) {
+                    holdAnimator = null
+                    holdFill()?.level = 0
+                    confirmStop()
+                }
+            }
+            start()
+        }
+    }
+
+    private fun cancelHold() {
+        holdAnimator?.let { animator ->
+            holdAnimator = null
+            animator.cancel()
+        }
+        holdFill()?.level = 0
+    }
+
+    private fun showVersion() {
+        val current = Updater.currentVersion(this)
+        version.text = getString(R.string.version_label, current)
+        if (!UpdatePolicy.canSelfUpdate(current)) {
+            update.setText(R.string.update_dev)
+            update.isEnabled = false
+            return
+        }
+        if (pendingRelease == null && UpdatePolicy.dueForCheck(System.currentTimeMillis(), settings.lastUpdateCheck)) {
+            checkForUpdate()
+        }
+    }
+
+    private fun checkForUpdate() {
+        update.isEnabled = false
+        update.setText(R.string.update_checking)
+        settings.lastUpdateCheck = System.currentTimeMillis()
+        Updater.background({ Updater.newerRelease(applicationContext) }) { result ->
+            if (isDestroyed) return@background
+            update.isEnabled = true
+            val release = result.getOrNull()
+            pendingRelease = release
+            update.text = when {
+                result.isFailure -> getString(R.string.update_check_failed)
+                release == null -> getString(R.string.update_none)
+                else -> getString(R.string.update_available, release.version)
+            }
+        }
+    }
+
+    private fun installUpdate(release: Updater.Release) {
+        update.isEnabled = false
+        update.setText(R.string.update_downloading)
+        Updater.background({ Updater.install(applicationContext, Updater.download(applicationContext, release)) }) { result ->
+            if (isDestroyed) return@background
+            result.exceptionOrNull()?.let { showUpdateFailed(it.message) }
+        }
+    }
+
+    private fun showUpdateFailed(message: String?) {
+        update.isEnabled = true
+        update.text = getString(R.string.update_failed, message.orEmpty())
+    }
+
     /** Asks before the stop. An accidental tap must not remove the charge limit. */
     private fun confirmStop() {
         AlertDialog.Builder(this)
@@ -249,5 +356,7 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_PERMISSIONS = 1
+        const val HOLD_MS = 2000L
+        const val MAX_LEVEL = 10_000
     }
 }

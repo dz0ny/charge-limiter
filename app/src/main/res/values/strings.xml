@@ -40,4 +40,18 @@
     <string name="notif_charger_off">Charger wanted off</string>
     <string name="notif_hot">Charger wanted off, battery is hot</string>
     <string name="notif_starting">Starting</string>
+    <string name="hold_to_stop">Hold to stop</string>
+    <string name="hold_hint">Hold the button for 2 seconds to stop</string>
+    <string name="version_label">Version %1$s</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_none">You have the latest version</string>
+    <string name="update_available">Update to %1$s</string>
+    <string name="update_downloading">Downloading…</string>
+    <string name="update_failed">Update failed: %1$s</string>
+    <string name="update_check_failed">Could not check for updates</string>
+    <string name="update_dev">Test build, updates are off</string>
+    <string name="notif_channel_updates">Updates</string>
+    <string name="notif_update_title">Update available</string>
+    <string name="notif_update_text">Charge Limiter %1$s. Tap to install.</string>
 </resources>

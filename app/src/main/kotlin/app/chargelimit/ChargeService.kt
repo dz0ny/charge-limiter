@@ -139,6 +139,7 @@ class ChargeService : Service() {
             val advertChanged = advertBefore != Triple(level, charging, wantOn)
             if (advertChanged) updateAdvert()
             if (advertChanged || degreesBefore != temperature / 10) publish()
+            checkForUpdate()
         }
     }
 
@@ -154,6 +155,42 @@ class ChargeService : Service() {
                 }
             }
             publish()
+        }
+    }
+
+    /** Looks for a newer release one time each day. Shows a notification when it finds one. */
+    private fun checkForUpdate() {
+        val now = System.currentTimeMillis()
+        if (!UpdatePolicy.canSelfUpdate(Updater.currentVersion(this))) return
+        if (!UpdatePolicy.dueForCheck(now, settings.lastUpdateCheck)) return
+        settings.lastUpdateCheck = now
+        Updater.background({ Updater.newerRelease(applicationContext) }) { result ->
+            val release = result.getOrNull()
+            if (destroyed || release == null) return@background
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    UPDATE_CHANNEL,
+                    getString(R.string.notif_channel_updates),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ),
+            )
+            val open = PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            manager.notify(
+                UPDATE_NOTIFICATION_ID,
+                Notification.Builder(this, UPDATE_CHANNEL)
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setContentTitle(getString(R.string.notif_update_title))
+                    .setContentText(getString(R.string.notif_update_text, release.version))
+                    .setContentIntent(open)
+                    .setAutoCancel(true)
+                    .build(),
+            )
         }
     }
 
@@ -327,6 +364,8 @@ class ChargeService : Service() {
         private const val TAG = "ChargeService"
         private const val CHANNEL = "status"
         private const val NOTIFICATION_ID = 1
+        private const val UPDATE_CHANNEL = "updates"
+        private const val UPDATE_NOTIFICATION_ID = 2
 
         /** The most recent status, for a screen that opens later. Null when the service is stopped. */
         @Volatile
